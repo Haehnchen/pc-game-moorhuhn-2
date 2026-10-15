@@ -314,7 +314,7 @@ void check_hunting_introduction() {
     require(title.logo_x() == 585.0F, "Settled title brand starts at the original anchor");
     const std::vector<TitleTile> retained(title.records().begin(), title.records().end());
     // Source 0x40bc61--0x40bcca: retained tween + delta, then cubic and FSTP.
-    for (const auto [delta, expected] : std::array{std::pair{0.125F, 589.296875F}, std::pair{0.375F, 635.0F}, std::pair{0.5F, 685.0F}, std::pair{0.125F, 685.0F}}) {
+    for (const auto& [delta, expected] : std::array{std::pair{0.125F, 589.296875F}, std::pair{0.375F, 635.0F}, std::pair{0.5F, 685.0F}, std::pair{0.125F, 685.0F}}) {
         title.update_introduction(delta);
         require(title.logo_x() == expected && same_records(title.records(), retained), "Introduction moves branding outward without changing retained tiles");
     }

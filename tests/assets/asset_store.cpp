@@ -13,6 +13,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -413,12 +414,25 @@ void store_failures(const std::filesystem::path& assets_root, const std::filesys
     std::filesystem::remove(fixture / png_path);
     const auto outside = fixture.parent_path() / "outside.png";
     write(outside, png);
-    std::filesystem::create_symlink(outside, fixture / png_path);
-    require_throws(
+    std::error_code symlink_error;
+    std::filesystem::create_symlink(outside, fixture / png_path, symlink_error);
+    // Some standard libraries, including MinGW, do not implement symlink creation.
+    if (symlink_error == std::errc::function_not_supported || symlink_error == std::errc::operation_not_supported) {
+        std::cout << "Skipped symlink escape check: " << symlink_error.message() << '\n';
+
+        return;
+    }
+
+    if (symlink_error) {
+        throw std::filesystem::filesystem_error("Cannot create symlink fixture", outside, fixture / png_path, symlink_error);
+    }
+
+    const auto error = asset_failure(
         [&] {
             static_cast<void>(assets::AssetStore::load_directory(fixture));
         },
-        "Accepted invalid data: symlink escaping loose asset root");
+        "symlink escaping loose asset root");
+    require(error.cause() == "runtime file escapes asset root", "Symlink must be rejected for escaping the asset root");
 }
 } // namespace
 
