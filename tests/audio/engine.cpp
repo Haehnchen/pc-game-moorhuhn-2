@@ -1,5 +1,7 @@
 #include "audio/engine.hpp"
 
+#include "audio/fixtures.hpp"
+
 #include <SDL3/SDL.h>
 #include <SDL3_mixer/SDL_mixer.h>
 
@@ -14,6 +16,7 @@
 #include <limits>
 #include <memory>
 #include <optional>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -899,26 +902,17 @@ public:
         format_.format = SDL_AUDIO_S16;
         check(format_.freq == 22050 || format_.freq == 44100, "Unsupported raw source rate");
         check(format_.channels == 1 || format_.channels == 2, "Unsupported raw source channels");
-        std::array<std::int16_t, 8192> block{};
-
-        while (true) {
-            const auto bytes = MIX_DecodeAudio(decoder_.get(), block.data(), sizeof(block), &format_);
-            check(bytes >= 0 && bytes % static_cast<int>(format_.channels * sizeof(std::int16_t)) == 0, "Raw decoder returned an invalid PCM length");
-
-            if (bytes == 0) {
-                break;
-            }
-
-            pcm_.insert(pcm_.end(), block.begin(), block.begin() + bytes / sizeof(std::int16_t));
-        }
-
+        decode_until(1);
         check(!pcm_.empty(), "Raw source decode is empty");
     }
 
     std::vector<std::int16_t> render(std::size_t frames) {
         std::vector<std::int16_t> pcm(frames * 2);
-        const auto source_frames = pcm_.size() / static_cast<std::size_t>(format_.channels);
         const std::size_t repeat = format_.freq == 22050 ? 2 : 1;
+        // One source frame of lookahead preserves mono interpolation and the
+        // first-frame guard at EOF without decoding unused minutes of music.
+        decode_until((position_ + frames) / repeat + 1);
+        const auto source_frames = pcm_.size() / static_cast<std::size_t>(format_.channels);
 
         for (std::size_t frame = 0; frame < frames; ++frame, ++position_) {
             const auto source_frame = position_ / repeat;
@@ -944,10 +938,21 @@ public:
     }
 
 private:
+    void decode_until(std::size_t frames) {
+        std::array<std::int16_t, 8192> block{};
+        while (!eof_ && pcm_.size() / static_cast<std::size_t>(format_.channels) < frames) {
+            const auto bytes = MIX_DecodeAudio(decoder_.get(), block.data(), sizeof(block), &format_);
+            check(bytes >= 0 && bytes % static_cast<int>(format_.channels * sizeof(std::int16_t)) == 0, "Raw decoder returned an invalid PCM length");
+            eof_ = bytes == 0;
+            pcm_.insert(pcm_.end(), block.begin(), block.begin() + bytes / sizeof(std::int16_t));
+        }
+    }
+
     std::unique_ptr<MIX_AudioDecoder, DecoderDeleter> decoder_;
     SDL_AudioSpec format_{};
     std::vector<std::int16_t> pcm_;
     std::size_t position_{};
+    bool eof_{};
 };
 
 const PanGain& vector_for(std::span<const PanGain> vectors, int channels, std::optional<float> pan, float gain) {
@@ -959,9 +964,22 @@ const PanGain& vector_for(std::span<const PanGain> vectors, int channels, std::o
     return *found;
 }
 
-void allocation_vectors(const assets::AssetStore& store) {
+void allocation_vectors(const std::filesystem::path& root) {
     std::size_t tested{};
     for (const auto& trace : allocation_traces) {
+        std::set<std::string_view> selected;
+        for (const auto& step : trace.steps) {
+            const auto& command = step.command;
+            if (step.finish_slots) {
+                selected.insert(audio::asset_id(Sample::typing_click));
+                selected.insert(audio::asset_id(Sample::shot));
+            } else if (command.action == Action::select_stream && command.stream != Stream::none) {
+                selected.insert(audio::asset_id(command.stream));
+            } else if (command.action == Action::play_sample || command.action == Action::start_loop) {
+                selected.insert(audio::asset_id(command.sample));
+            }
+        }
+        const auto store = audio_test::load_assets(root, selected);
         audio::Engine engine(store, audio::OutputMode::offline, 44100);
         std::uint64_t sequence = 1;
         for (const auto& step : trace.steps) {
@@ -1070,11 +1088,12 @@ void gain_sequences(const assets::AssetStore& store) {
     check(engine.state().active_channels == 0 && energy(engine.render_frames(64)) == 0, "Normalization cleanup leaked PCM");
 
     std::size_t fade_steps{};
+    audio::Engine fade(store, audio::OutputMode::offline, 44100);
+    std::uint64_t fade_sequence = 1;
 
     for (const auto& trace : fade_cases) {
-        audio::Engine fade(store, audio::OutputMode::offline, 44100);
+        const auto started_before = fade.state().streams_started;
         RawDecoder source(store, audio::asset_id(Stream::title));
-        std::uint64_t fade_sequence = 1;
         apply(fade, {fade_sequence++, Action::select_stream, Stream::title});
         apply(fade, {fade_sequence++, Action::set_stream_gain, Stream::none, Sample::shot, real(trace.initial_gain_bits)});
 
@@ -1088,8 +1107,8 @@ void gain_sequences(const assets::AssetStore& store) {
             ++fade_steps;
         }
 
-        check(fade.state().streams_started == 1, "Source sampled fade gain commands restarted playback");
-        apply(fade, {fade_sequence, Action::stop_stream});
+        check(fade.state().streams_started == started_before + 1, "Source sampled fade gain commands restarted playback");
+        apply(fade, {fade_sequence++, Action::stop_stream});
         check(fade.state().active_channels == 0 && energy(fade.render_frames(64)) == 0, "Sampled fade cleanup leaked PCM");
     }
 
@@ -1340,16 +1359,17 @@ void atomic_saturation(const assets::AssetStore& store) {
     check(engine.state().active_channels == 0 && energy(engine.render_frames(pcm_frames)) == 0, "Atomic saturation cleanup leaked PCM");
 }
 
-void policy(const assets::AssetStore& store) {
+void policy(const std::filesystem::path& root) {
     MixerLifetime lifetime;
-    allocation_vectors(store);
-    gain_and_pan_vectors(store, pan_vectors);
-    gain_sequences(store);
-    loop_continuity(store);
-    retained_handle(store);
-    reserved_music(store);
-    audible_overlap(store);
-    atomic_saturation(store);
+    const auto shot = audio::asset_id(Sample::shot), title = audio::asset_id(Stream::title), airplane = audio::asset_id(Sample::airplane_motor);
+    allocation_vectors(root);
+    gain_and_pan_vectors(audio_test::load_assets(root, {shot, title, audio::asset_id(Sample::game_over)}), pan_vectors);
+    gain_sequences(audio_test::load_assets(root, {title}));
+    loop_continuity(audio_test::load_assets(root, {airplane}));
+    retained_handle(audio_test::load_assets(root, {shot, airplane}));
+    reserved_music(audio_test::load_assets(root, {shot, title, airplane}));
+    audible_overlap(audio_test::load_assets(root, {shot, title, audio::asset_id(Sample::game_over), audio::asset_id(Sample::chicken_hit)}));
+    atomic_saturation(audio_test::load_assets(root, {shot}));
 }
 
 } // namespace
@@ -1357,12 +1377,13 @@ void policy(const assets::AssetStore& store) {
 int main(int argc, char** argv) {
     try {
         check(argc == 3, "Usage: audio_tests ASSETS offline|dummy|unavailable|policy");
-        const auto store = assets::AssetStore::load_directory(argv[1]);
         const std::string_view mode(argv[2]);
-
         if (mode == "policy") {
-            policy(store);
-        } else if (mode == "offline") {
+            policy(argv[1]);
+            return 0;
+        }
+        const auto store = assets::AssetStore::load_directory(argv[1]);
+        if (mode == "offline") {
             loading(store);
             offline(store);
             flying_audio(store);

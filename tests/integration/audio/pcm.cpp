@@ -1,4 +1,5 @@
 #include "audio/engine.hpp"
+#include "audio/fixtures.hpp"
 
 #include <SDL3/SDL.h>
 #include <SDL3_mixer/SDL_mixer.h>
@@ -293,12 +294,12 @@ int main(int argc, char** argv) {
     try {
         check(argc == 2, "Usage: moorhuhn2_audio_pcm_tests ASSETS");
         const MixerLifetime lifetime;
-        const auto store = assets::AssetStore::load_directory(argv[1]);
-
         for (const auto& item : cases) {
+            const auto store = audio_test::load_assets(argv[1], {asset_id(item)});
             loop(store, item, encoded_sources);
         }
 
+        const auto store = audio_test::load_assets(argv[1], {audio::asset_id(audio::Sample::chicken_hit)});
         mono_one_shot(store, encoded_sources);
 
         return 0;
