@@ -6,10 +6,8 @@ import json
 from pathlib import Path
 import time
 
-from PIL import Image
-
 from round_native import (REPOSITORY, PrivateRuntime, assert_closed, center_pointer,
-                          click, close_window, rgb_pixels, save_path, source_screen,
+                          click, close_window, draw_text, save_path, source_screen,
                           wait_screen, wait_title)
 
 
@@ -19,17 +17,7 @@ def results_screen():
     # Wait for a settled score row, not the background already revealed during
     # round_exit: entering results clears the queued keys after that animation.
     for text, x in (("Frank", 220), ("  250", 400)):
-        for index, character in enumerate(text):
-            if character == " ":
-                continue
-            glyph = (ord(character) - ord('A') + 31 if character.isupper()
-                     else ord(character) - ord('a') + 57 if character.islower()
-                     else ord(character) - ord('0') + 98)
-            cell = font.crop((0, glyph * 50, 30, (glyph + 1) * 50))
-            mask = Image.new("L", cell.size)
-            mask.putdata([0 if pixel == (255, 0, 255) else 255
-                          for pixel in rgb_pixels(cell)])
-            expected.paste(cell, (x + index * 20, 150), mask)
+        expected = draw_text(expected, font, text, x, 150)
     return expected
 
 

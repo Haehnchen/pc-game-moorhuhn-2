@@ -14,6 +14,7 @@ from unittest import mock
 REPOSITORY = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPOSITORY))
 from tools.private_runtime import DISABLED_AUDIO_DRIVER, PrivateRuntime
+from tools.image_pixels import RgbImage
 
 
 # This is a small Xlib client, not the production app. It has no audio code and
@@ -135,11 +136,11 @@ class PrivateRuntimeTests(unittest.TestCase):
             self.assertNotIn("GLX", display_info)
             for name in ("runtime", "data", "config", "cache", "tmp", "work"):
                 self.assertEqual((runtime.case_dir / name).stat().st_mode & 0o777, 0o700)
-            app = runtime.launch_app([sys.executable, "-u", "-c", WINDOW_CLIENT], timeout=5.0)
+            app = runtime.launch_app([sys.executable, "-u", "-c", WINDOW_CLIENT], timeout=15.0)
             self.assertEqual(app.command, (sys.executable, "-u", "-c", WINDOW_CLIENT))
             self.assertEqual(os.getpgid(app.pid), app.pid)
             self.assertEqual(os.getsid(app.pid), app.pid)
-            window = runtime.wait_for_window(pid=app.pid)
+            window = runtime.wait_for_window(pid=app.pid, timeout=10.0)
             environment = json.loads(app.log_path.read_text().splitlines()[0])
             self.assertEqual(environment["DISPLAY"], runtime.display)
             for name in ("WAYLAND_DISPLAY", "WAYLAND_SOCKET", "XAUTHORITY", "LD_PRELOAD", "GTK_IM_MODULE",
@@ -176,7 +177,10 @@ class PrivateRuntimeTests(unittest.TestCase):
             wait_log(app.log_path, "input=4")
             captured = runtime.screenshot("artifacts/client.png", window=window)
             self.assertEqual(captured.size, (160, 120))
-            self.assertEqual(captured.getpixel((80, 60)), (255, 0, 0))
+            self.assertEqual(captured.pixel((80, 60)), (255, 0, 0))
+            copied = runtime.case_dir / "artifacts" / "copied.png"
+            captured.save(copied)
+            self.assertEqual(RgbImage.load(copied), captured)
             self.assertIsNone(app.poll())
         self.assertFalse(live(app.pid))
         self.assertTrue((runtime.case_dir / "artifacts/client.png").is_file())
@@ -185,8 +189,8 @@ class PrivateRuntimeTests(unittest.TestCase):
     def test_optional_window_manager_is_private_and_cleaned(self):
         runtime = self.runtime("wm", window_manager=True)
         with runtime:
-            app = runtime.launch_app([sys.executable, "-u", "-c", WINDOW_CLIENT], timeout=5.0)
-            window = runtime.wait_for_window(pid=app.pid)
+            app = runtime.launch_app([sys.executable, "-u", "-c", WINDOW_CLIENT], timeout=15.0)
+            window = runtime.wait_for_window(pid=app.pid, timeout=10.0)
             runtime.xdotool(["windowactivate", "--sync", window])
             self.assertEqual(int(runtime.xdotool(["getactivewindow"]).stdout), window)
             self.assertTrue(live(runtime.wm.pid))

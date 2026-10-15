@@ -81,7 +81,7 @@ Requires CMake 3.25+, Ninja, Make, Python 3.11+ and a C++23 compiler.
 SDL dependencies are downloaded on the first build and cached under `build/dependencies/`.
 On Linux, SDL needs the X11, Wayland, audio and graphics development packages listed in
 [the nightly workflow](.github/workflows/nightly.yml); `make check` also needs Xvfb,
-xdpyinfo, xdotool, Openbox, xprop, ImageMagick and Pillow for its native checks.
+xdpyinfo, xdotool, Openbox, xprop and ImageMagick for its native checks.
 
 ```sh
 make run

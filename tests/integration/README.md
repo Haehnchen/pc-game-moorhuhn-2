@@ -4,7 +4,7 @@ These scripts run the normal executable on owned private displays with
 private preferences and silent audio. They inspect window pixels, exit status and
 saved files; the game has no diagnostic mode or command-line arguments.
 The checks require Xvfb, xdotool, xdpyinfo,
-openbox, xprop, ImageMagick and Pillow. Cases and failure logs remain under
+openbox, xprop and ImageMagick. Cases and failure logs remain under
 `.local/private-runtime/` after owned processes and display endpoints are cleaned.
 
 ```sh

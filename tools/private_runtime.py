@@ -23,6 +23,8 @@ import threading
 import time
 import uuid
 
+from tools.image_pixels import RgbImage
+
 
 DISABLED_AUDIO_DRIVER = "moorhuhn2-disabled"
 _PRIVATE_ENV = {
@@ -191,7 +193,7 @@ class PrivateRuntime:
             "SDL_AUDIODRIVER": DISABLED_AUDIO_DRIVER, "SDL_AUDIO_DRIVER": DISABLED_AUDIO_DRIVER,
         })
         self._environment = environment
-        required = {"Xvfb": self.xvfb_program, "xdpyinfo": "xdpyinfo", "xdotool": "xdotool", "import": "import"}
+        required = {"Xvfb": self.xvfb_program, "xdpyinfo": "xdpyinfo", "xdotool": "xdotool", "import": "import", "convert": "convert"}
         if self.window_manager:
             required.update({"openbox": "openbox", "xprop": "xprop"})
         for name, executable in required.items():
@@ -452,7 +454,6 @@ class PrivateRuntime:
 
     def screenshot(self, path: Path | str, *, window: int | None = None,
                    timeout: float = 3.0):
-        from PIL import Image
         assert self.case_dir is not None
         path = Path(path)
         if not path.is_absolute():
@@ -462,8 +463,7 @@ class PrivateRuntime:
             raise ValueError("Screenshots must remain inside this private case")
         path.parent.mkdir(parents=True, exist_ok=True)
         self._tool("import", ["-window", "root" if window is None else window, "PNG:" + str(path)], timeout=timeout)
-        with Image.open(path) as source:
-            image = source.convert("RGB")
+        image = RgbImage.load(path)
         self._event("screenshot", path=str(path), window=window, size=image.size)
         return image
 

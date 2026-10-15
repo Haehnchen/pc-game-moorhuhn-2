@@ -9,21 +9,48 @@ import re
 import sys
 import time
 
-from PIL import Image, ImageChops, ImageDraw
-
 REPOSITORY = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPOSITORY))
 
 from tools.private_runtime import PrivateRuntime
 from tools.pack_assets import read_manifest
+from tools.image_pixels import RgbImage
 
 
-def rgb_pixels(image: Image.Image):
-    data = image.tobytes()
+def rgb_pixels(image: RgbImage):
+    data = image.pixels
     return zip(data[0::3], data[1::3], data[2::3], strict=True)
 
 
-def source_title(manifest: Path) -> tuple[Image.Image, dict]:
+def rgb565(image: RgbImage) -> RgbImage:
+    return RgbImage(image.size, bytes(value for r, g, b in rgb_pixels(image)
+                                    for value in (((r >> 3) * 255 + 15) // 31,
+                                                  ((g >> 2) * 255 + 31) // 63,
+                                                  ((b >> 3) * 255 + 15) // 31)))
+
+
+def draw_text(image: RgbImage, font: RgbImage, text: str, x: int, y: int) -> RgbImage:
+    pixels = bytearray(image.pixels)
+    width, height = image.size
+    font_width, _ = font.size
+    for index, character in enumerate(text):
+        if character == " ":
+            continue
+        glyph = (ord(character) - ord('A') + 31 if character.isupper()
+                 else ord(character) - ord('a') + 57 if character.islower()
+                 else ord(character) - ord('0') + 98)
+        for row in range(50):
+            for column in range(30):
+                source = ((glyph * 50 + row) * font_width + column) * 3
+                color = font.pixels[source:source + 3]
+                left, top = x + index * 20 + column, y + row
+                if color != b"\xff\x00\xff" and 0 <= left < width and 0 <= top < height:
+                    target = (top * width + left) * 3
+                    pixels[target:target + 3] = color
+    return RgbImage(image.size, bytes(pixels))
+
+
+def source_title(manifest: Path) -> tuple[RgbImage, dict]:
     document = read_manifest(manifest)
     matches = [entry for entry in document["images"] if entry["id"] == "gfx/mainscreen"]
     if len(matches) != 1:
@@ -32,30 +59,15 @@ def source_title(manifest: Path) -> tuple[Image.Image, dict]:
     title_path = (manifest.parent / entry["png"]["path"]).resolve(strict=True)
     if not title_path.is_relative_to(manifest.parent.resolve()):
         raise RuntimeError("Title image escapes the asset root")
-    with Image.open(title_path) as source:
-        image = source.convert("RGB")
+    image = rgb565(RgbImage.load(title_path))
     if image.size != (640, 480):
         raise RuntimeError("Expected the supplied MH2 640x480 main screen")
-    converted = Image.new("RGB", image.size)
-    converted.putdata([(((r >> 3) * 255 + 15) // 31,
-                        ((g >> 2) * 255 + 31) // 63, ((b >> 3) * 255 + 15) // 31)
-                       for r, g, b in rgb_pixels(image)])
-    image = converted
     # The restored Extras route is an intentional title addition. Compose its
     # source font independently; keep all other background pixels exact.
     font_entry = next(entry for entry in document["images"] if entry["id"] == "gfx/font")
     font_path = manifest.parent / font_entry["png"]["path"]
-    with Image.open(font_path) as source:
-        font = source.convert("RGB")
-    red = [((value >> 3) * 255 + 15) // 31 for value in range(256)]
-    green = [((value >> 2) * 255 + 31) // 63 for value in range(256)]
-    for index, character in enumerate("Extras"):
-        glyph = ord(character) - ord('A') + 31 if character.isupper() else ord(character) - ord('a') + 57
-        cell = font.crop((0, glyph * 50, 30, (glyph + 1) * 50))
-        mask = Image.new("L", cell.size)
-        mask.putdata([0 if ((r >> 3) << 11 | (g >> 2) << 5 | b >> 3) == 0xf81f else 255
-                      for r, g, b in rgb_pixels(cell)])
-        image.paste(cell.point(red + green + red), (480 + index * 20, 375), mask)
+    font = rgb565(RgbImage.load(font_path))
+    image = draw_text(image, font, "Extras", 480, 375)
     return image, {"title": str(title_path), "font": str(font_path)}
 
 
@@ -70,11 +82,34 @@ def geometry(runtime: PrivateRuntime, window: int) -> dict[str, int]:
 def source_screen(asset_id):
     manifest = read_manifest(REPOSITORY / "assets/manifest.txt")
     entry = next(item for item in manifest["images"] if item["id"] == asset_id)
-    with Image.open(REPOSITORY / "assets" / entry["png"]["path"]) as image:
-        image = image.convert("RGB")
-    red = [((value >> 3) * 255 + 15) // 31 for value in range(256)]
-    green = [((value >> 2) * 255 + 31) // 63 for value in range(256)]
-    return image.point(red + green + red)
+    return rgb565(RgbImage.load(REPOSITORY / "assets" / entry["png"]["path"]))
+
+
+def scaled_screen(image: RgbImage, size: tuple[int, int], scale: int, x: int, y: int) -> RgbImage:
+    width, height = size
+    source_width, source_height = image.size
+    pixels = bytearray(width * height * 3)
+    for row in range(source_height):
+        source = image.pixels[row * source_width * 3:(row + 1) * source_width * 3]
+        expanded = b"".join(source[column:column + 3] * scale for column in range(0, len(source), 3))
+        for repeat in range(scale):
+            start = ((y + row * scale + repeat) * width + x) * 3
+            pixels[start:start + len(expanded)] = expanded
+    return RgbImage(size, bytes(pixels))
+
+
+def screen_difference(actual: RgbImage, expected: RgbImage, masks, region) -> RgbImage:
+    width, height = actual.size
+    pixels = bytearray(abs(left - right) for left, right in zip(actual.pixels, expected.pixels, strict=True))
+    for left, top, right, bottom in masks:
+        for row in range(max(0, top), min(height, bottom)):
+            start, end = (row * width + max(0, left)) * 3, (row * width + min(width, right)) * 3
+            pixels[start:end] = bytes(end - start)
+    if region:
+        left, top, right, bottom = region
+        return RgbImage((right - left, bottom - top), b"".join(
+            pixels[(row * width + left) * 3:(row * width + right) * 3] for row in range(top, bottom)))
+    return RgbImage(actual.size, bytes(pixels))
 
 
 def wait_screen(runtime, app, window, expected, name, *, masks=(), region=None, timeout=30):
@@ -85,23 +120,21 @@ def wait_screen(runtime, app, window, expected, name, *, masks=(), region=None, 
     if scale < 1:
         raise RuntimeError("Native screen checks require at least 640x480")
     x, y = (width - 640 * scale) // 2, (height - 480 * scale) // 2
-    oracle = Image.new("RGB", (width, height))
-    oracle.paste(expected.resize((640 * scale, 480 * scale), Image.Resampling.NEAREST), (x, y))
+    oracle = scaled_screen(expected, (width, height), scale, x, y)
+
+    def rectangle(box):
+        left, top, right, bottom = box
+        return x + left * scale, y + top * scale, x + right * scale, y + bottom * scale
+
+    masks = tuple(map(rectangle, masks))
+    region = rectangle(region) if region else None
 
     def matches():
         actual = runtime.screenshot(f"artifacts/{name}.png", window=window)
         if actual.size != oracle.size:
             return False
-        difference = ImageChops.difference(actual, oracle)
-        draw = ImageDraw.Draw(difference)
-        for left, top, right, bottom in masks:
-            draw.rectangle((x + left * scale, y + top * scale,
-                            x + right * scale - 1, y + bottom * scale - 1), fill=0)
-        if region:
-            left, top, right, bottom = region
-            difference = difference.crop((x + left * scale, y + top * scale,
-                                          x + right * scale, y + bottom * scale))
-        if difference.getbbox() is None:
+        difference = screen_difference(actual, oracle, masks, region)
+        if not any(difference.pixels):
             return True
         difference.save(runtime.case_dir / "artifacts" / f"{name}-difference.png")
         time.sleep(.1)

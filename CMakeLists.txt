@@ -219,7 +219,10 @@ if(BUILD_TESTING)
             COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tests/tools/test_linux_package.py" -v)
         set_tests_properties(tools.linux_package PROPERTIES LABELS "packaging;tools")
         add_test(NAME integration.private_runtime
-            COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tests/integration/test_private_runtime.py")
+            COMMAND "${Python3_EXECUTABLE}" -S "${PROJECT_SOURCE_DIR}/tests/integration/test_private_runtime.py")
         set_tests_properties(integration.private_runtime PROPERTIES LABELS "integration;isolation" TIMEOUT 60)
+        add_test(NAME integration.native_images
+            COMMAND "${Python3_EXECUTABLE}" -S "${PROJECT_SOURCE_DIR}/tests/integration/test_native_images.py")
+        set_tests_properties(integration.native_images PROPERTIES LABELS "integration;render" TIMEOUT 15)
     endif()
 endif()
