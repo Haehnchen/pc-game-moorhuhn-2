@@ -1,0 +1,112 @@
+MH2ASSETS
+images 70
+image gfx/Bossscreen truecolor 640 480 36059 0 0 0 0 0 0
+image gfx/Chickleft1 indexed 165 2480 33301 409200 1024 1 20 165 124
+image gfx/Chickleft2 indexed 83 1240 11560 102920 1024 1 20 83 62
+image gfx/Chickleft3 indexed 41 620 4157 25420 1024 1 20 41 31
+image gfx/Chickright1 indexed 165 2480 33301 409200 1024 1 20 165 124
+image gfx/Chickright2 indexed 83 1240 11592 102920 1024 1 20 83 62
+image gfx/Chickright3 indexed 41 620 4166 25420 1024 1 20 41 31
+image gfx/Computer truecolor 640 480 217989 0 0 0 0 0 0
+image gfx/DChickleft1 indexed 165 1240 18674 204600 1024 1 10 165 124
+image gfx/DChickleft2 indexed 83 620 7007 51460 1024 1 10 83 62
+image gfx/DChickleft3 indexed 41 310 2801 12710 1024 1 10 41 31
+image gfx/DChickright1 indexed 165 1240 18690 204600 1024 1 10 165 124
+image gfx/DChickright2 indexed 83 620 6956 51460 1024 1 10 83 62
+image gfx/DChickright3 indexed 41 310 2787 12710 1024 1 10 41 31
+image gfx/Leaf indexed 60 1200 10183 72000 1024 1 20 60 60
+image gfx/Leaf2 indexed 80 2000 14306 160000 1024 1 25 80 80
+image gfx/M2BG01 indexed 1920 480 281031 921600 1024 30 1 64 480
+image gfx/M2BG02 indexed 1920 480 207175 921600 1024 30 1 64 480
+image gfx/M2BG03 indexed 1920 480 75104 921600 1024 30 1 64 480
+image gfx/M2BG04 truecolor 1920 152 233486 0 0 30 1 64 152
+image gfx/M2BG05 indexed 2560 480 31993 1228800 1024 40 1 64 480
+image gfx/Making truecolor 640 480 581938 0 0 0 0 0 0
+image gfx/WitanLogo truecolor 200 203 65626 0 0 0 0 0 0
+image gfx/Witansmall indexed 80 81 2210 6480 1024 0 0 0 0
+image gfx/ballon indexed 110 84 2206 9240 1024 5 2 22 42
+image gfx/big_appear indexed 310 4608 88160 1428480 1024 1 12 310 384
+image gfx/big_hit indexed 330 6144 131170 2027520 1024 1 16 330 384
+image gfx/blimp indexed 120 240 8658 28800 1024 1 4 120 60
+image gfx/boat indexed 144 869 34788 125136 1024 1 11 144 79
+image gfx/boatcol indexed 144 79 2362 11376 1024 1 1 144 79
+image gfx/branch1 indexed 78 60 1905 4680 1024 1 1 78 60
+image gfx/branch2 indexed 118 58 1990 6844 1024 1 1 118 58
+image gfx/church indexed 20 80 1402 1600 1024 1 2 20 40
+image gfx/disclaimer truecolor 640 480 222426 0 0 0 0 0 0
+image gfx/flyaway1 indexed 90 1496 14881 134640 1024 1 22 90 68
+image gfx/flyaway2 indexed 90 1496 13975 134640 1024 1 22 90 68
+image gfx/flyaway3 indexed 90 1496 13975 134640 1024 1 22 90 68
+image gfx/font indexed 30 5400 14094 162000 1024 1 108 30 50
+image gfx/frog indexed 720 240 17433 172800 1024 6 3 120 80
+image gfx/hide1 indexed 61 1872 17308 114192 1024 1 16 61 117
+image gfx/hide2 indexed 78 1210 13391 94380 1024 1 10 78 121
+image gfx/hide3 indexed 80 1824 15954 145920 1024 1 16 80 114
+image gfx/highfly indexed 206 210 6915 43260 1024 1 1 206 210
+image gfx/hochsitz1 indexed 120 1000 44784 120000 1024 1 10 120 100
+image gfx/hochsitz2 indexed 120 1000 38450 120000 1024 1 10 120 100
+image gfx/hochsitz3 indexed 120 200 10767 24000 1024 1 2 120 100
+image gfx/hochsitz4 indexed 120 100 10485 12000 1024 1 1 120 100
+image gfx/hochsitzcol indexed 120 300 3788 36000 1024 1 3 120 100
+image gfx/house indexed 13 20 974 260 1024 1 1 13 20
+image gfx/jennie truecolor 125 300 69448 0 0 0 0 0 0
+image gfx/kopf indexed 46 29 1174 1334 1024 0 0 0 0
+image gfx/loading truecolor 267 200 85074 0 0 0 0 0 0
+image gfx/loadingbar truecolor 267 200 75578 0 0 0 0 0 0
+image gfx/lplane indexed 900 200 26780 180000 1024 10 2 90 100
+image gfx/mainscreen truecolor 640 480 429170 0 0 32 24 20 20
+image gfx/mousecursor indexed 32 96 1065 3072 1024 1 3 32 32
+image gfx/particle indexed 8 8 859 64 1024 1 8 8 1
+image gfx/particle2 indexed 8 48 924 384 1024 1 6 8 8
+image gfx/pole indexed 48 48 1354 2304 1024 1 1 48 48
+image gfx/rose indexed 18 26 960 468 1024 1 1 18 26
+image gfx/rplane indexed 900 200 26420 180000 1024 10 2 90 100
+image gfx/scheuche indexed 32 224 2803 7168 1024 1 7 32 32
+image gfx/scorescreen truecolor 640 480 383301 0 0 32 24 20 20
+image gfx/snake indexed 8 32 916 256 1024 0 0 0 0
+image gfx/specialhuhn indexed 1000 665 48222 665000 1024 5 5 200 133
+image gfx/spinne1 indexed 1252 200 8217 250400 1024 25 1 50 200
+image gfx/spinne2 indexed 1252 200 7898 250400 1024 25 1 50 200
+image gfx/stone indexed 146 2310 35044 337260 1024 1 21 146 110
+image gfx/tree1_01 indexed 110 128 4121 14080 1024 1 1 110 128
+image gfx/tree1_02 indexed 97 352 8295 34144 1024 1 1 97 352
+audio 39
+audio sfx/Moorhuhn2_Highscore_Music 366236 22050 2 807552
+audio sfx/Moorhuhn2_Title_Music 1380832 22050 2 3044736
+audio sfx/chickenhit2 14733 22050 1 27072
+audio sfx/sfx_50_point_score 10136 44100 1 56448
+audio sfx/sfx_airplane_crash 32820 44100 1 182016
+audio sfx/sfx_airplane_loop 78377 44100 1 434304
+audio sfx/sfx_airplane_motor_failure_loop 58816 44100 1 326016
+audio sfx/sfx_airplane_shot 15561 44100 1 86400
+audio sfx/sfx_background_birds_STEREO_LOOP 156995 22050 2 346176
+audio sfx/sfx_balloon_shot 11182 44100 1 62208
+audio sfx/sfx_big_chicken_pops_up 10360 44100 1 57600
+audio sfx/sfx_big_chicken_shot 9940 44100 1 55296
+audio sfx/sfx_boat_sinking 17426 44100 1 96768
+audio sfx/sfx_chicken_shot_CLOSE 9312 44100 1 51840
+audio sfx/sfx_chicken_shot_FAR 7867 44100 1 43776
+audio sfx/sfx_chicken_shot_MID 8481 44100 1 47232
+audio sfx/sfx_churchbell 31984 44100 1 177408
+audio sfx/sfx_churchbell_2 26782 44100 1 148608
+audio sfx/sfx_empty_magazine 4743 44100 1 26496
+audio sfx/sfx_frog 5983 44100 1 33408
+audio sfx/sfx_frog_shot 8071 44100 1 44928
+audio sfx/sfx_game_over 64184 44100 2 177408
+audio sfx/sfx_get_ready_after_typing_name 18262 44100 1 101376
+audio sfx/sfx_guardhouse_breaks_down 26163 44100 1 145152
+audio sfx/sfx_guardhouse_ladder_shot 9314 44100 1 51840
+audio sfx/sfx_gun_reload 5784 44100 1 32256
+audio sfx/sfx_house_shot 25954 44100 1 144000
+audio sfx/sfx_magic_balloons_appear 26578 44100 1 147456
+audio sfx/sfx_scarecrow_shot 6404 44100 1 35712
+audio sfx/sfx_shotgun_blast 55170 44100 1 152064
+audio sfx/sfx_spider_swings 8899 44100 1 49536
+audio sfx/sfx_stone_shot 8487 44100 1 47232
+audio sfx/sfx_time_running_out 6935 44100 1 39168
+audio sfx/sfx_tree_breaks_down 24199 44100 1 134784
+audio sfx/sfx_tree_shot 769 44100 1 4608
+audio sfx/sfx_treebranch_hits_ground 4950 44100 1 27648
+audio sfx/sfx_treebranch_shot 5567 44100 1 31104
+audio sfx/sfx_typename_click 583 44100 1 3456
+audio sfx/sfx_zeppelin_shot 45718 44100 1 253440

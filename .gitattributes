@@ -1,0 +1,9 @@
+* text=auto eol=lf
+# Palette/index bytes can look like text; preserve them exactly across checkouts.
+*.indices binary
+*.palette binary
+*.png binary
+*.webp binary
+*.mp3 binary
+*.ico binary
+*.sav binary

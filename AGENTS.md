@@ -1,0 +1,7 @@
+- C++23, SDL3, SDL3_mixer; Python 3.11+ for asset and packaging tools.
+- Build: CMake 3.25+, Ninja, Make. Runtime assets are committed under `assets/`.
+- Use clear names, RAII and small functions. Comments explain non-obvious behavior.
+- Keep game logic SDL-free with explicit time, input and random state
+- Reuse builds. Run affected tests, `make format-check` and `git diff --check`; use ASan/UBSan for changes across modules. Compiler warnings are errors.
+- Mirror source modules under `tests/`; cross-module tests belong in `tests/integration/`. Avoid redundant tests and status documents.
+- Launch programs in the background with private display/storage and silent audio via `tools/private_runtime.py`.
